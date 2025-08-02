@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureVault - Protected File Manager</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="screen active">
+        <div class="login-container">
+            <div class="logo">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" fill="#4A90E2"/>
+                    <path d="M17 14L17.91 16.76L21 17L17.91 17.24L17 20L16.09 17.24L13 17L16.09 16.76L17 14Z" fill="#4A90E2"/>
+                    <path d="M7 14L7.91 16.76L11 17L7.91 17.24L7 20L6.09 17.24L3 17L6.09 16.76L7 14Z" fill="#4A90E2"/>
+                </svg>
+                <h1>SecureVault</h1>
+                <p>Protected File Manager</p>
+            </div>
+            
+            <div class="login-form">
+                <div class="input-group">
+                    <label for="password">Enter Password</label>
+                    <input type="password" id="password" placeholder="Password" autocomplete="off">
+                    <div class="password-strength" id="passwordStrength">
+                        <div class="strength-bar"></div>
+                    </div>
+                </div>
+                
+                <button id="loginBtn" class="btn-primary">
+                    <span class="btn-text">Unlock Vault</span>
+                    <span class="btn-loading" style="display: none;">
+                        <svg class="spinner" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" opacity="0.25"/>
+                            <path d="M12 2v4m0 12v4m10-10h-4M6 12H2" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                        </svg>
+                        Unlocking...
+                    </span>
+                </button>
+                
+                <div class="setup-info" id="setupInfo" style="display: none;">
+                    <p>🔐 First time setup: Create your dual-password system</p>
+                    <p>Your first password will be the <strong>real password</strong> for sensitive files.</p>
+                    <p>You can add a <strong>dummy password</strong> later for decoy files.</p>
+                </div>
+                
+                <div class="error-message" id="errorMessage" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="mainScreen" class="screen">
+        <header class="app-header">
+            <div class="header-left">
+                <h2 id="vaultTitle">SecureVault</h2>
+                <span id="vaultMode" class="vault-mode"></span>
+            </div>
+            
+            <div class="header-right">
+                <button id="addFilesBtn" class="btn-secondary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Add Files
+                </button>
+                
+                <button id="settingsBtn" class="btn-secondary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" stroke="currentColor" stroke-width="2"/>
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    Settings
+                </button>
+                
+                <button id="lockBtn" class="btn-danger">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="3" y="11" width="18" height="10" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>
+                        <circle cx="12" cy="16" r="1" stroke="currentColor" stroke-width="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    Lock
+                </button>
+            </div>
+        </header>
+
+        <main class="app-main">
+            <div class="file-grid" id="fileGrid">
+                <div class="empty-state" id="emptyState">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2"/>
+                        <polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2"/>
+                        <line x1="12" y1="18" x2="12" y2="12" stroke="currentColor" stroke-width="2"/>
+                        <line x1="9" y1="15" x2="15" y2="15" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <h3>No files in vault</h3>
+                    <p>Click "Add Files" to securely store your documents</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Vault Settings</h3>
+                <button class="modal-close" id="closeSettings">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="setting-section">
+                    <h4>Dual Password System</h4>
+                    <p>Your vault uses two passwords for maximum security:</p>
+                    
+                    <div class="password-info">
+                        <div class="password-type real">
+                            <strong>Real Password</strong>
+                            <p>Access to your actual sensitive files</p>
+                            <span class="status" id="realPasswordStatus">✓ Configured</span>
+                        </div>
+                        
+                        <div class="password-type dummy">
+                            <strong>Dummy Password</strong>
+                            <p>Access to decoy files for plausible deniability</p>
+                            <span class="status" id="dummyPasswordStatus">⚠ Not configured</span>
+                        </div>
+                    </div>
+                    
+                    <button id="setupDummyBtn" class="btn-secondary">Setup Dummy Password</button>
+                </div>
+                
+                <div class="setting-section">
+                    <h4>Vault Statistics</h4>
+                    <div class="stats">
+                        <div class="stat">
+                            <span class="stat-label">Real Files:</span>
+                            <span class="stat-value" id="realFilesCount">0</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Dummy Files:</span>
+                            <span class="stat-value" id="dummyFilesCount">0</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Total Size:</span>
+                            <span class="stat-value" id="totalSize">0 KB</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dummy Password Setup Modal -->
+    <div id="dummyPasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Setup Dummy Password</h3>
+                <button class="modal-close" id="closeDummySetup">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <p>Create a dummy password that will show decoy files. This provides plausible deniability if you're forced to unlock your vault.</p>
+                
+                <div class="input-group">
+                    <label for="dummyPassword">Dummy Password</label>
+                    <input type="password" id="dummyPassword" placeholder="Enter dummy password">
+                </div>
+                
+                <div class="input-group">
+                    <label for="confirmDummyPassword">Confirm Password</label>
+                    <input type="password" id="confirmDummyPassword" placeholder="Confirm dummy password">
+                </div>
+                
+                <div class="modal-actions">
+                    <button id="cancelDummySetup" class="btn-secondary">Cancel</button>
+                    <button id="saveDummyPassword" class="btn-primary">Save Dummy Password</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

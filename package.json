@@ -1,0 +1,19 @@
+{
+  "name": "securevault",
+  "version": "1.0.0",
+  "description": "Secure file vault with dual-password protection",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["security", "encryption", "file-manager"],
+  "author": "SecureVault",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "electron": "^37.2.5",
+    "crypto-js": "^4.2.0"
+  }
+}
