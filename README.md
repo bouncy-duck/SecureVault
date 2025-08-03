@@ -30,11 +30,18 @@ A desktop application with dual-password protection that provides **plausible de
 
 ## 📦 Installation
 
-### Prerequisites
+### Production Mode(Installing the application)
+- Download the latest installer from Releases
+- Run the installer
+- The app is ready for First Time Setup
+
+### Development Mode(No installation)
+
+#### Prerequisites
 - Node.js (v14 or higher)
 - npm (comes with Node.js)
 
-### Setup
+#### Setup
 1. Clone the repository:
    ```bash
    git clone [repository-url]
