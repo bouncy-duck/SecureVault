@@ -3,17 +3,83 @@
   "version": "1.0.0",
   "description": "Secure file vault with dual-password protection",
   "main": "main.js",
+  "homepage": "https://github.com/securevault/securevault",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:portable": "electron-builder --win portable",
+    "dist": "electron-builder --publish=never",
+    "pack": "electron-builder --dir",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": ["security", "encryption", "file-manager"],
-  "author": "SecureVault",
+  "author": {
+    "name": "SecureVault",
+    "email": "support@securevault.com"
+  },
   "license": "MIT",
   "type": "commonjs",
   "dependencies": {
-    "electron": "^37.2.5",
     "crypto-js": "^4.2.0"
+  },
+  "devDependencies": {
+    "electron": "^37.2.5",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.securevault.app",
+    "productName": "SecureVault",
+    "copyright": "Copyright © 2025 SecureVault",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "app.js",
+      "index.html",
+      "styles.css",
+      "package.json",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "requestedExecutionLevel": "asInvoker",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SecureVault",
+      "uninstallDisplayName": "SecureVault",
+      "license": "LICENSE.txt",
+      "installerIcon": "assets/installer.ico",
+      "uninstallerIcon": "assets/uninstaller.ico",
+      "installerHeaderIcon": "assets/installer.ico",
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.${ext}"
+    },
+    "extraResources": [
+      {
+        "from": "README.md",
+        "to": "README.md"
+      }
+    ]
   }
 }

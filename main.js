@@ -57,20 +57,7 @@ app.on('web-contents-created', (event, contents) => {
 // IPC handlers for secure operations
 ipcMain.handle('encrypt-data', async (event, data, password) => {
     try {
-        const algorithm = 'aes-256-cbc';
-        const salt = Buffer.from('secureVaultSalt2024', 'utf8'); // Fixed salt
-        const key = crypto.pbkdf2Sync(password, salt, 10000, 32, 'sha256');
-        const iv = crypto.randomBytes(16);
-        
-        const cipher = crypto.createCipheriv(algorithm, key, iv);
-        
-        let encrypted = cipher.update(JSON.stringify(data), 'utf8', 'hex');
-        encrypted += cipher.final('hex');
-        
-        return {
-            encrypted,
-            iv: iv.toString('hex')
-        };
+        return await encryptWithPassword(data, password);
     } catch (error) {
         console.error('Encryption error:', error);
         throw new Error('Encryption failed');
@@ -79,21 +66,10 @@ ipcMain.handle('encrypt-data', async (event, data, password) => {
 
 ipcMain.handle('decrypt-data', async (event, encryptedData, password) => {
     try {
-        if (!encryptedData || !encryptedData.encrypted || !encryptedData.iv) {
+        if (!encryptedData || !encryptedData.encrypted || !encryptedData.iv || !encryptedData.salt) {
             throw new Error('Invalid encrypted data format');
         }
-        
-        const algorithm = 'aes-256-cbc';
-        const salt = Buffer.from('secureVaultSalt2024', 'utf8'); // Fixed salt
-        const key = crypto.pbkdf2Sync(password, salt, 10000, 32, 'sha256');
-        const iv = Buffer.from(encryptedData.iv, 'hex');
-        
-        const decipher = crypto.createDecipheriv(algorithm, key, iv);
-        
-        let decrypted = decipher.update(encryptedData.encrypted, 'hex', 'utf8');
-        decrypted += decipher.final('utf8');
-        
-        return JSON.parse(decrypted);
+        return await decryptWithPassword(encryptedData, password);
     } catch (error) {
         console.error('Decryption error:', error);
         throw new Error('Invalid password or corrupted data');
@@ -113,16 +89,22 @@ ipcMain.handle('create-dual-vault', async (event, vaultData, realPassword, dummy
             }
         };
 
-        // Encrypt with real password
-        const realEncrypted = await encryptWithPassword(vaultData, realPassword);
+        // 1. Create and encrypt the real vault data (contains only real files)
+        const realVaultData = {
+            ...vaultData,
+            dummyFiles: [] // Real vault should not see dummy files
+        };
+        const realEncrypted = await encryptWithPassword(realVaultData, realPassword);
         vaultStructure.realVault = realEncrypted;
 
-        // If dummy password provided, create dummy vault
+        // 2. If dummy password provided, create and encrypt the dummy vault
         if (dummyPassword) {
             const dummyVaultData = {
                 ...vaultData,
+                // For the dummy vault, the "realFiles" list actually contains the dummy files.
+                // This provides plausible deniability.
                 realFiles: vaultData.dummyFiles || [],
-                dummyFiles: []
+                dummyFiles: [] // The dummy vault itself doesn't have a separate dummy list.
             };
             const dummyEncrypted = await encryptWithPassword(dummyVaultData, dummyPassword);
             vaultStructure.dummyVault = dummyEncrypted;
@@ -138,7 +120,7 @@ ipcMain.handle('create-dual-vault', async (event, vaultData, realPassword, dummy
 // Helper function to encrypt data with a password
 async function encryptWithPassword(data, password) {
     const algorithm = 'aes-256-cbc';
-    const salt = Buffer.from('secureVaultSalt2024', 'utf8');
+    const salt = crypto.randomBytes(16); // Generate a unique salt
     const key = crypto.pbkdf2Sync(password, salt, 10000, 32, 'sha256');
     const iv = crypto.randomBytes(16);
     
@@ -149,14 +131,15 @@ async function encryptWithPassword(data, password) {
     
     return {
         encrypted,
-        iv: iv.toString('hex')
+        iv: iv.toString('hex'),
+        salt: salt.toString('hex') // Store the salt with the encrypted data
     };
 }
 
 // Helper function to decrypt data with a password
 async function decryptWithPassword(encryptedData, password) {
     const algorithm = 'aes-256-cbc';
-    const salt = Buffer.from('secureVaultSalt2024', 'utf8');
+    const salt = Buffer.from(encryptedData.salt, 'hex'); // Use the stored salt
     const key = crypto.pbkdf2Sync(password, salt, 10000, 32, 'sha256');
     const iv = Buffer.from(encryptedData.iv, 'hex');
     
@@ -231,23 +214,30 @@ ipcMain.handle('add-dummy-password', async (event, vaultStructure, realPassword,
 
 ipcMain.handle('save-vault', async (event, vaultData) => {
     try {
-        const vaultPath = path.join(__dirname, 'vault.secure');
+        if (!vaultData || typeof vaultData !== 'object') {
+            throw new Error('Invalid vault data received');
+        }
+        const userDataPath = app.getPath('userData');
+        await fs.promises.mkdir(userDataPath, { recursive: true });
+        const vaultPath = path.join(userDataPath, 'vault.secure');
         await fs.promises.writeFile(vaultPath, JSON.stringify(vaultData));
         return true;
     } catch (error) {
-        throw new Error('Failed to save vault');
+        console.error('Failed to save vault:', error);
+        throw new Error(`Failed to save vault: ${error.message}`);
     }
 });
 
 ipcMain.handle('load-vault', async () => {
     try {
-        const vaultPath = path.join(__dirname, 'vault.secure');
+        const vaultPath = path.join(app.getPath('userData'), 'vault.secure');
         if (!fs.existsSync(vaultPath)) {
             return null;
         }
         const data = await fs.promises.readFile(vaultPath, 'utf8');
         return JSON.parse(data);
     } catch (error) {
+        console.error('Failed to load vault:', error);
         return null;
     }
 });
